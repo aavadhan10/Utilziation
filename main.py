@@ -7,7 +7,7 @@ from datetime import datetime
 import calendar
 
 # Must be the first Streamlit command
-st.set_page_config(layout="wide", page_title="Law Firm Analytics Dashboard")
+st.set_page_config(layout="wide", page_title="Utilization Report")
 
 # Custom CSS for better styling
 st.markdown("""
