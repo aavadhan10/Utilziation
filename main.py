@@ -7,7 +7,7 @@ from datetime import datetime
 import calendar
 
 # Must be the first Streamlit command
-st.set_page_config(layout="wide", page_title="Utilization Report")
+st.set_page_config(layout="wide", page_title="Law Firm Analytics Dashboard")
 
 # Custom CSS for better styling
 st.markdown("""
@@ -29,18 +29,29 @@ def check_password():
     if not st.session_state["password_correct"]:
         st.markdown("## Dashboard Login")
         password = st.text_input("Please enter the dashboard password", type="password")
-        if password == "Scale2025":  # Hardcoded for demonstration
+        if password == "Scale2025":
             st.session_state["password_correct"] = True
-        elif password:  # If password is wrong
+        elif password:
             st.error("Incorrect password")
         return st.session_state["password_correct"]
     
     return True
 
 def load_and_process_data():
-    # Create the dataframe structure
+    # Create the dataframe structure with two years of data
+    current_year_data = {
+        'Month': [], 'Practice Group': [], 'Billable Hours': [],
+        'Non-Billable Hours': [], 'Billed Hours': [], 'Revenue': [], 'Year': []
+    }
+    
+    previous_year_data = {
+        'Month': [], 'Practice Group': [], 'Billable Hours': [],
+        'Non-Billable Hours': [], 'Billed Hours': [], 'Revenue': [], 'Year': []
+    }
+    
     months = ['January', 'February', 'March', 'April', 'May', 'June', 
               'July', 'August', 'September', 'October', 'November']
+              
     practice_groups = [
         'Corporate & Securities',
         'Fintech & Financial Services',
@@ -49,17 +60,7 @@ def load_and_process_data():
         'Real Estate & Land Use'
     ]
     
-    # Initialize data dictionary
-    data = {
-        'Month': [],
-        'Practice Group': [],
-        'Billable Hours': [],
-        'Non-Billable Hours': [],
-        'Billed Hours': [],
-        'Revenue': []
-    }
-    
-    # Sample data for January
+    # Sample data for January 2024
     january_data = {
         'Corporate & Securities': [1421.10, 0, 994.5, 889180.84],
         'Fintech & Financial Services': [170.30, 0, 114.40, 152508.27],
@@ -68,211 +69,138 @@ def load_and_process_data():
         'Real Estate & Land Use': [242.80, 0, 153.20, 122155.65]
     }
     
-    # Add data for each month and practice group
-    for month in months:
-        for pg in practice_groups:
-            data['Month'].append(month)
-            data['Practice Group'].append(pg)
-            if month == 'January':
-                metrics = january_data[pg]
-                data['Billable Hours'].append(metrics[0])
-                data['Non-Billable Hours'].append(metrics[1])
-                data['Billed Hours'].append(metrics[2])
-                data['Revenue'].append(metrics[3])
-            else:
-                # Add sample data for other months using numpy's random
-                data['Billable Hours'].append(float(np.random.randint(100, 2000)))
-                data['Non-Billable Hours'].append(float(np.random.randint(0, 200)))
-                data['Billed Hours'].append(float(np.random.randint(100, 1500)))
-                data['Revenue'].append(float(np.random.randint(100000, 1200000)))
+    # Generate data for both years
+    for year_data, year in [(current_year_data, 2024), (previous_year_data, 2023)]:
+        for month in months:
+            for pg in practice_groups:
+                year_data['Month'].append(month)
+                year_data['Practice Group'].append(pg)
+                year_data['Year'].append(year)
+                
+                if year == 2024 and month == 'January':
+                    metrics = january_data[pg]
+                    year_data['Billable Hours'].append(metrics[0])
+                    year_data['Non-Billable Hours'].append(metrics[1])
+                    year_data['Billed Hours'].append(metrics[2])
+                    year_data['Revenue'].append(metrics[3])
+                else:
+                    # Generate sample data with year-over-year patterns
+                    base_billable = float(np.random.randint(100, 2000))
+                    if year == 2023:
+                        multiplier = 0.9
+                    else:
+                        multiplier = 1.0
+                    
+                    year_data['Billable Hours'].append(base_billable * multiplier)
+                    year_data['Non-Billable Hours'].append(float(np.random.randint(0, 200)))
+                    year_data['Billed Hours'].append(base_billable * multiplier * 0.8)
+                    year_data['Revenue'].append(base_billable * multiplier * np.random.randint(500, 800))
     
-    df = pd.DataFrame(data)
+    # Combine the data
+    df = pd.concat([pd.DataFrame(current_year_data), pd.DataFrame(previous_year_data)])
     
     # Calculate additional metrics
     df['Total Hours'] = df['Billable Hours'] + df['Non-Billable Hours']
     df['Utilization Rate'] = (df['Billable Hours'] / df['Total Hours'] * 100).round(2)
     df['Realization Rate'] = (df['Billed Hours'] / df['Billable Hours'] * 100).round(2)
     df['Average Hourly Rate'] = (df['Revenue'] / df['Billable Hours']).round(2)
+    df['Year-Month'] = df.apply(lambda x: f"{x['Year']}-{x['Month']}", axis=1)
     
     return df
-
-def create_dashboard():
-    st.title("Utilization Reprt Dashboard")
+    y=year_data['Utilization Rate'],
+                    name=f'Utilization Rate {year}',
+                    mode='lines+markers'
+                ))
+                fig_metrics.add_trace(go.Scatter(
+                    x=year_data['Month'],
+                    y=year_data['Realization Rate'],
+                    name=f'Realization Rate {year}',
+                    mode='lines+markers'
+                ))
+            
+            fig_metrics.update_layout(
+                title='Efficiency Metrics Trends',
+                height=400
+            )
+            st.plotly_chart(fig_metrics, use_container_width=True)
     
-    # Load data
-    df = load_and_process_data()
-    
-    # Sidebar filters
-    st.sidebar.header("Filters")
-    
-    # Date range filter
-    selected_months = st.sidebar.multiselect(
-        "Select Months",
-        options=df['Month'].unique(),
-        default=df['Month'].unique()
-    )
-    
-    # Practice group filter
-    selected_practice_groups = st.sidebar.multiselect(
-        "Select Practice Groups",
-        options=df['Practice Group'].unique(),
-        default=df['Practice Group'].unique()
-    )
-    
-    # Metric selection
-    metric_options = {
-        'Billable Hours': 'Billable Hours',
-        'Revenue': 'Revenue ($)',
-        'Utilization Rate': 'Utilization Rate (%)',
-        'Realization Rate': 'Realization Rate (%)'
-    }
-    selected_metric = st.sidebar.selectbox(
-        "Select Primary Metric",
-        options=list(metric_options.keys()),
-        format_func=lambda x: metric_options[x]
-    )
-    
-    # Filter data
-    filtered_df = df[
-        (df['Month'].isin(selected_months)) &
-        (df['Practice Group'].isin(selected_practice_groups))
-    ]
-    
-    # Key Metrics Row
-    st.header("Key Performance Indicators")
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        total_revenue = filtered_df['Revenue'].sum()
-        st.metric(
-            "Total Revenue",
-            f"${total_revenue:,.2f}",
-            delta=f"{(total_revenue / len(selected_months)):,.2f} per month"
-        )
-    
-    with col2:
-        avg_utilization = filtered_df['Utilization Rate'].mean()
-        st.metric(
-            "Average Utilization Rate",
-            f"{avg_utilization:.1f}%",
-            delta=f"{avg_utilization - df['Utilization Rate'].mean():.1f}% vs all time"
-        )
-    
-    with col3:
-        avg_realization = filtered_df['Realization Rate'].mean()
-        st.metric(
-            "Average Realization Rate",
-            f"{avg_realization:.1f}%",
-            delta=f"{avg_realization - df['Realization Rate'].mean():.1f}% vs all time"
-        )
-    
-    with col4:
-        avg_rate = filtered_df['Average Hourly Rate'].mean()
-        st.metric(
-            "Average Hourly Rate",
-            f"${avg_rate:.2f}",
-            delta=f"${avg_rate - df['Average Hourly Rate'].mean():.2f} vs all time"
-        )
-    
-    # Main visualizations
-    st.header("Detailed Analysis")
-    
-    # Interactive visualization tabs
-    tab1, tab2, tab3 = st.tabs(["Time Series Analysis", "Practice Group Analysis", "Performance Metrics"])
-    
-    with tab1:
-        # Time series chart
-        st.subheader(f"{selected_metric} Over Time")
-        fig1 = px.line(
-            filtered_df,
-            x='Month',
-            y=selected_metric,
-            color='Practice Group',
-            markers=True,
-            height=400
-        )
-        fig1.update_layout(yaxis_title=metric_options[selected_metric])
-        st.plotly_chart(fig1, use_container_width=True)
+    # YoY Comparisons Tab
+    with tab5:
+        st.header("Year-over-Year Comparisons")
         
-        # Monthly comparison
-        st.subheader("Monthly Comparison")
-        fig2 = px.bar(
-            filtered_df,
-            x='Month',
-            y=selected_metric,
-            color='Practice Group',
+        st.subheader("Revenue Comparison")
+        yoy_revenue = filtered_df.pivot_table(
+            values='Revenue',
+            index='Month',
+            columns='Year',
+            aggfunc='sum'
+        ).reset_index()
+        
+        fig_yoy_revenue = go.Figure()
+        for year in selected_years:
+            fig_yoy_revenue.add_trace(go.Bar(
+                name=str(year),
+                x=yoy_revenue['Month'],
+                y=yoy_revenue[year],
+                text=yoy_revenue[year].apply(lambda x: f'${x:,.0f}'),
+                textposition='auto',
+            ))
+        
+        fig_yoy_revenue.update_layout(
+            title='Monthly Revenue by Year',
             barmode='group',
             height=400
         )
-        fig2.update_layout(yaxis_title=metric_options[selected_metric])
-        st.plotly_chart(fig2, use_container_width=True)
-    
-    with tab2:
-        col1, col2 = st.columns(2)
+        st.plotly_chart(fig_yoy_revenue, use_container_width=True)
         
-        with col1:
-            # Practice group distribution
-            st.subheader("Practice Group Distribution")
-            fig3 = px.pie(
-                filtered_df.groupby('Practice Group')[selected_metric].sum().reset_index(),
-                values=selected_metric,
-                names='Practice Group',
+        col5, col6 = st.columns(2)
+        
+        with col5:
+            # Calculate YoY growth rates
+            yoy_growth = pd.DataFrame()
+            for metric in ['Revenue', 'Billable Hours', 'Average Hourly Rate']:
+                current_year = filtered_df[filtered_df['Year'] == max(selected_years)].groupby('Month')[metric].sum()
+                previous_year = filtered_df[filtered_df['Year'] == min(selected_years)].groupby('Month')[metric].sum()
+                growth = ((current_year - previous_year) / previous_year * 100).round(2)
+                yoy_growth[f'{metric} Growth'] = growth
+            
+            fig_growth = px.bar(
+                yoy_growth.reset_index(),
+                x='Month',
+                y=yoy_growth.columns,
+                title='Year-over-Year Growth Rates',
+                barmode='group',
                 height=400
             )
-            st.plotly_chart(fig3, use_container_width=True)
+            st.plotly_chart(fig_growth, use_container_width=True)
         
-        with col2:
-            # Practice group performance heatmap
-            st.subheader("Performance Heatmap")
-            pivot_data = filtered_df.pivot_table(
-                values=selected_metric,
+        with col6:
+            # Practice Group YoY Comparison
+            practice_yoy = filtered_df.pivot_table(
+                values='Revenue',
                 index='Practice Group',
-                columns='Month',
+                columns='Year',
                 aggfunc='sum'
+            ).reset_index()
+            
+            fig_practice_yoy = go.Figure()
+            for year in selected_years:
+                fig_practice_yoy.add_trace(go.Bar(
+                    name=str(year),
+                    x=practice_yoy['Practice Group'],
+                    y=practice_yoy[year],
+                    text=practice_yoy[year].apply(lambda x: f'${x:,.0f}'),
+                    textposition='auto',
+                ))
+            
+            fig_practice_yoy.update_layout(
+                title='Practice Group Revenue by Year',
+                barmode='group',
+                height=400,
+                xaxis_tickangle=-45
             )
-            fig4 = px.imshow(
-                pivot_data,
-                aspect='auto',
-                color_continuous_scale='RdYlBu_r',
-                height=400
-            )
-            st.plotly_chart(fig4, use_container_width=True)
-    
-    with tab3:
-        # Scatter plot of relationships
-        st.subheader("Metric Relationships")
-        fig5 = px.scatter(
-            filtered_df,
-            x='Utilization Rate',
-            y='Revenue',
-            color='Practice Group',
-            size='Billable Hours',
-            hover_data=['Month'],
-            height=500
-        )
-        st.plotly_chart(fig5, use_container_width=True)
-        
-        # Performance metrics table
-        st.subheader("Detailed Metrics Table")
-        metric_table = filtered_df.groupby('Practice Group').agg({
-            'Billable Hours': 'sum',
-            'Revenue': 'sum',
-            'Utilization Rate': 'mean',
-            'Realization Rate': 'mean',
-            'Average Hourly Rate': 'mean'
-        }).round(2)
-        
-        st.dataframe(
-            metric_table.style.format({
-                'Revenue': '${:,.2f}',
-                'Utilization Rate': '{:.1f}%',
-                'Realization Rate': '{:.1f}%',
-                'Average Hourly Rate': '${:.2f}'
-            }),
-            height=400
-        )
-
-def main():
+            st.plotly_chart(fig_practice_yoy, use_container_width=True)
+    def main():
     if not check_password():
         st.stop()
     
