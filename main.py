@@ -5,6 +5,21 @@ import plotly.graph_objects as go
 from datetime import datetime
 import calendar
 
+# Must be the first Streamlit command
+st.set_page_config(layout="wide", page_title="Law Firm Analytics Dashboard")
+
+# Custom CSS for better styling
+st.markdown("""
+    <style>
+    .metric-card {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 def check_password():
     """Returns `True` if the user had the correct password."""
     if "password_correct" not in st.session_state:
@@ -81,20 +96,6 @@ def load_and_process_data():
     return df
 
 def create_dashboard():
-    st.set_page_config(layout="wide", page_title="Law Firm Analytics Dashboard")
-    
-    # Custom CSS for better styling
-    st.markdown("""
-        <style>
-        .metric-card {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
-        }
-        </style>
-    """, unsafe_allow_html=True)
-    
     st.title("Law Firm Analytics Dashboard")
     
     # Load data
