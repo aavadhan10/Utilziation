@@ -97,7 +97,7 @@ def load_and_process_data():
     return df
 
 def create_dashboard():
-    st.title("Law Firm Analytics Dashboard")
+    st.title("Utilization Dashboard")
     
     # Load data
     df = load_and_process_data()
