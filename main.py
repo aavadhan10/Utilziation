@@ -5,8 +5,35 @@ import plotly.graph_objects as go
 from datetime import datetime
 import calendar
 
+def check_password():
+    """Returns `True` if the user had the correct password."""
+    if "password_correct" not in st.session_state:
+        st.session_state["password_correct"] = False
+    
+    if not st.session_state["password_correct"]:
+        st.markdown("## Dashboard Login")
+        password = st.text_input("Please enter the dashboard password", type="password")
+        if password == "Scale2025":  # Hardcoded for demonstration
+            st.session_state["password_correct"] = True
+        elif password:  # If password is wrong
+            st.error("Incorrect password")
+        return st.session_state["password_correct"]
+    
+    return True
+
 def load_and_process_data():
-    # Create a more comprehensive dataset including all metrics
+    # Create the dataframe structure
+    months = ['January', 'February', 'March', 'April', 'May', 'June', 
+              'July', 'August', 'September', 'October', 'November']
+    practice_groups = [
+        'Corporate & Securities',
+        'Fintech & Financial Services',
+        'Intellectual Property',
+        'Litigation',
+        'Real Estate & Land Use'
+    ]
+    
+    # Initialize data dictionary
     data = {
         'Month': [],
         'Practice Group': [],
@@ -16,25 +43,32 @@ def load_and_process_data():
         'Revenue': []
     }
     
-    raw_data = {
-        'January': {
-            'Corporate & Securities': [1421.10, 0, 994.5, 889180.84],
-            'Fintech & Financial Services': [170.30, 0, 114.40, 152508.27],
-            'Intellectual Property': [530.10, 0, 384.50, 343759.88],
-            'Litigation': [604.00, 0, 594.00, 357942.29],
-            'Real Estate & Land Use': [242.80, 0, 153.20, 122155.65]
-        },
-        # Add similar structures for other months...
+    # Sample data for January
+    january_data = {
+        'Corporate & Securities': [1421.10, 0, 994.5, 889180.84],
+        'Fintech & Financial Services': [170.30, 0, 114.40, 152508.27],
+        'Intellectual Property': [530.10, 0, 384.50, 343759.88],
+        'Litigation': [604.00, 0, 594.00, 357942.29],
+        'Real Estate & Land Use': [242.80, 0, 153.20, 122155.65]
     }
     
-    for month, month_data in raw_data.items():
-        for practice_group, metrics in month_data.items():
+    # Add data for each month and practice group
+    for month in months:
+        for pg in practice_groups:
             data['Month'].append(month)
-            data['Practice Group'].append(practice_group)
-            data['Billable Hours'].append(metrics[0])
-            data['Non-Billable Hours'].append(metrics[1])
-            data['Billed Hours'].append(metrics[2])
-            data['Revenue'].append(metrics[3])
+            data['Practice Group'].append(pg)
+            if month == 'January':
+                metrics = january_data[pg]
+                data['Billable Hours'].append(metrics[0])
+                data['Non-Billable Hours'].append(metrics[1])
+                data['Billed Hours'].append(metrics[2])
+                data['Revenue'].append(metrics[3])
+            else:
+                # Add sample data for other months
+                data['Billable Hours'].append(float(pd.np.random.randint(100, 2000)))
+                data['Non-Billable Hours'].append(float(pd.np.random.randint(0, 200)))
+                data['Billed Hours'].append(float(pd.np.random.randint(100, 1500)))
+                data['Revenue'].append(float(pd.np.random.randint(100000, 1200000)))
     
     df = pd.DataFrame(data)
     
@@ -236,5 +270,11 @@ def create_dashboard():
             height=400
         )
 
-if __name__ == "__main__":
+def main():
+    if not check_password():
+        st.stop()
+    
     create_dashboard()
+
+if __name__ == "__main__":
+    main()
