@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import numpy as np
 from datetime import datetime
 import calendar
 
@@ -79,11 +80,11 @@ def load_and_process_data():
                 data['Billed Hours'].append(metrics[2])
                 data['Revenue'].append(metrics[3])
             else:
-                # Add sample data for other months
-                data['Billable Hours'].append(float(pd.np.random.randint(100, 2000)))
-                data['Non-Billable Hours'].append(float(pd.np.random.randint(0, 200)))
-                data['Billed Hours'].append(float(pd.np.random.randint(100, 1500)))
-                data['Revenue'].append(float(pd.np.random.randint(100000, 1200000)))
+                # Add sample data for other months using numpy's random
+                data['Billable Hours'].append(float(np.random.randint(100, 2000)))
+                data['Non-Billable Hours'].append(float(np.random.randint(0, 200)))
+                data['Billed Hours'].append(float(np.random.randint(100, 1500)))
+                data['Revenue'].append(float(np.random.randint(100000, 1200000)))
     
     df = pd.DataFrame(data)
     
